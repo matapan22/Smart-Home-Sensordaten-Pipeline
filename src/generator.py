@@ -3,6 +3,7 @@ import random
 from datetime import datetime, timedelta
 import os
 
+#Generates smart home sensor data with faults.
 def generate_sensor_data(filepath, num_records=500):
     """Generates synthetic smart home sensor data with intentional faults."""
     

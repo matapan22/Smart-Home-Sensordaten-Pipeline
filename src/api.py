@@ -33,18 +33,20 @@ def run_pipeline():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+#Retrieves the stored data from DB
 @app.get("/api/v1/data/raw", summary="Get stored raw data")
 def get_raw_data(limit: int = 100):
     """Retrieves the stored data from PostgreSQL."""
     query = f"SELECT * FROM sensor_data LIMIT {limit}"
     try:
-        # Polars can read directly from the database!
+        # Polars can read directly from the database
         df = pl.read_database_uri(query, DB_URI, engine="adbc")
         # Convert DataFrame to a list of dictionaries for the JSON response
         return df.to_dicts()
     except Exception as e:
         raise HTTPException(status_code=500, detail="Database error. Did you run the pipeline first?")
 
+#Retrieves the derived data from DB
 @app.get("/api/v1/data/derived", summary="Get insights and aggregations")
 def get_derived_data():
     """Retrieves aggregated insights and counts of data quality issues."""
@@ -58,7 +60,6 @@ def get_derived_data():
         error_counts = df.group_by("error_reason").len().drop_nulls().to_dicts()
 
         # Extract the actual rows that contain errors
-        # The tilde (~) operator in Polars means "NOT"
         error_rows = df.filter(~pl.col("is_valid")).to_dicts()
         
         # Calculate average values for valid data only

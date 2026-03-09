@@ -4,11 +4,11 @@ import os
 def process_sensor_data(file_path: str) -> pl.DataFrame:
     """Reads, normalizes, and applies quality checks to sensor data."""
     
-    # 1. Import Data [cite: 11]
+    # 1. Import DataFile
     print(f"Reading data from {file_path}...")
     df = pl.read_csv(file_path)
     
-    # 2. Normalization[cite: 12, 26]: Convert timestamp strings to actual datetime objects
+    # 2. Normalization: Convert timestamp strings to actual datetime objects
     df = df.with_columns(
         pl.col("timestamp").str.to_datetime()
     )
@@ -16,7 +16,7 @@ def process_sensor_data(file_path: str) -> pl.DataFrame:
     # Ensure data is sorted chronologically per sensor for our window functions
     df = df.sort(["sensor_id", "timestamp"])
     
-    # 3. Quality Check 1: Stuck-at fault [cite: 23]
+    # 3. Quality Check 1: Stuck-at fault
     # Calculate rolling standard deviation over 5 readings. If it's 0.0, the value is stuck.
     df = df.with_columns(
         pl.col("value")
@@ -35,7 +35,7 @@ def process_sensor_data(file_path: str) -> pl.DataFrame:
         )
     )
     
-    # 5. Create a final 'is_valid' flag and an 'error_reason' for the API [cite: 28, 29]
+    # 5. Create a final 'is_valid' flag and an 'error_reason'
     df = df.with_columns(
         is_valid=~(pl.col("is_stuck") | pl.col("is_outlier")),
         error_reason=pl.when(pl.col("is_outlier")).then(pl.lit("outlier_detected"))
@@ -46,13 +46,13 @@ def process_sensor_data(file_path: str) -> pl.DataFrame:
     return df
 
 if __name__ == "__main__":
-    # Test the processor
+
     processed_data = process_sensor_data("../data/sensor_readings.csv")
     
     print("\n--- Processing Complete ---")
     print(f"Total records: {processed_data.height}")
     
-    # Filter and show only the invalid data to prove our detections work
+    # Filter and show only the invalid data
     invalid_data = processed_data.filter(~pl.col("is_valid"))
     print(f"\nFound {invalid_data.height} records with data quality issues:")
     print(invalid_data)
